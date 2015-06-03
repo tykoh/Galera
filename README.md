@@ -8,6 +8,7 @@ docker build --tag=galera .
 Starting the first node
 ``` sh
 docker run \
+-p 3306:3306 \
 --detach=true \
 --name node1 \
 -h node1 \
@@ -111,4 +112,26 @@ docker exec -t nodea mysql -e "create user 'username'@'192.168.0.0/255.255.0.0' 
 docker exec -t nodea mysql -e "grant all on *.* to 'username'@'192.168.0.0/255.255.0.0';"
 
 docker exec -t nodea mysql -e "grant all on *.* to 'username'@'localhost';"
+```
+
+Start container to do backup
+```sh
+docker run \
+--detach=true \
+--name nodeBackup \
+-h nodeBackup \
+--link node1:node1 \
+-v $(pwd):/data \
+galera \
+--wsrep-cluster-name=default-cluster \
+--wsrep-cluster-address=gcomm://node1
+```
+
+Using innobackupex
+```sh
+docker exec -it nodeBackup /bin/bash
+
+mkdir -p /data/backup
+
+innobackupex --user=username --password=user_password --port=3306 --host=node1 /data/backup
 ```
